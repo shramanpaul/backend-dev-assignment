@@ -15,6 +15,15 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    isActive: {
+        type: Boolean,
+        default: false,
+    },
+    location: String,
+    age: Number,
+    work: String,
+    dob: Date,
+    description: String,
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

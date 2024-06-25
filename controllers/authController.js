@@ -89,7 +89,7 @@ exports.validateOtp = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
+ //update user info after email verification
 exports.updateUserInfo = async (req, res) => {
     const { email, location, age, work, dob, description } = req.body;
 

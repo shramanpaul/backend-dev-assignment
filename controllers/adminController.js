@@ -11,10 +11,12 @@ exports.registerAdmin = async (req, res) => {
         if (adminExists) {
             return res.status(400).json({ message: 'Username already taken' });
         }
+
         const emailExists = await Admin.findOne({ email });
         if (emailExists) {
             return res.status(400).json({ message: 'Email already registered' });
         }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -23,6 +25,7 @@ exports.registerAdmin = async (req, res) => {
             username,
             password: hashedPassword,
         });
+
         await newAdmin.save();
 
         res.status(201).json({ message: 'Admin registered successfully' });
@@ -35,8 +38,8 @@ exports.loginAdmin = async (req, res) => {
     const { emailOrUsername, password } = req.body;
 
     try {
-        const admin = await Admin.findOne({ 
-            $or: [{ email: emailOrUsername }, { username: emailOrUsername }] 
+        const admin = await Admin.findOne({
+            $or: [{ email: emailOrUsername }, { username: emailOrUsername }]
         });
 
         if (!admin) {
@@ -47,7 +50,8 @@ exports.loginAdmin = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
-        const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const token = jwt.sign({ user: { id: admin._id } }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.json({ token });
     } catch (err) {
@@ -59,6 +63,35 @@ exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.find({}, 'username');
         res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getUserDetails = async (req, res) => {
+    const { username } = req.params;
+
+    try {
+        const user = await User.findOne({ username }).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.deleteUser = async (req, res) => {
+    const { username } = req.params;
+    try {
+        const user = await User.findOneAndDelete({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({ message: 'User deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

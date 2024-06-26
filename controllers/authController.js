@@ -168,3 +168,32 @@ exports.getUserInfo = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.updateUserInfoField = async (req, res) => {
+    const userId = req.user.id;
+    const { field, value } = req.body;
+
+    //allowed fields
+    const allowedFields = ['location', 'age', 'work', 'dob', 'description'];
+
+    if (!allowedFields.includes(field)) {
+        return res.status(400).json({ message: 'Invalid field' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { [field]: value },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ message: 'User information updated successfully', user: updatedUser });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+

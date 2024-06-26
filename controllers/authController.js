@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Otp = require('../models/Otp');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
 
 const sendOtpEmail = async (email, otp) => {
     let transporter = nodemailer.createTransport({
@@ -105,6 +106,52 @@ exports.updateUserInfo = async (req, res) => {
         }
 
         res.status(200).json({ message: 'User information updated successfully', user: updatedUser });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+//Login and generate JWT
+exports.login = async (req, res) => {
+    const { emailOrUsername, password } = req.body;
+
+    try {
+        const user = await User.findOne({ 
+            $or: [
+                { email: emailOrUsername }, 
+                { username: emailOrUsername }
+            ] 
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        if (!user.isActive) {
+            return res.status(400).json({ message: 'Please verify your email first' });
+        }
+
+        const payload = {
+            user: {
+                id: user._id
+            }
+        };
+
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' },
+            (err, token) => {
+                if (err) throw err;
+                res.status(200).json({ token });
+            }
+        );
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

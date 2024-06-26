@@ -1,4 +1,5 @@
 const Admin = require('../models/Admin');
+const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -49,6 +50,15 @@ exports.loginAdmin = async (req, res) => {
         const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.json({ token });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}, 'username');
+        res.json(users);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
